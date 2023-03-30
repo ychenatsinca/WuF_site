@@ -245,7 +245,7 @@
      h2o.den <- mean(raw.data$H2O, na.rm=T)             # [g/m3] 
      co2.den <- mean(raw.data$CO2, na.rm=T)             # [mg/m3]
      ch4.den <- mean(raw.data$CH4, na.rm=T)*16.0        # [mmol/m3]--> [mg/m3]
- 
+
 #get WPL correction factors for CO2 and CH4 flux calculation
 Q=(0.*(air.temp**2.)) + (-1.3*1E-7*air.temp) + (3.7*1E-5) 
 R=(4.0*1E-8*(air.temp**2.)) + (1.1*1E-5*air.temp) + (2.18*1E-3)
@@ -254,9 +254,11 @@ Pe=air.press
 xv=(mean(raw.data$H2O,na.rm=T)/mean(raw.data$Rhoa,na.rm=T))
 TkTk= ((-4.0*1E-8*(air.temp**2.) + 1.55*1E-5*air.temp + -7.0*1E-3)*air.press)  + (-4.7*1E-6 * air.temp**2. + 3.0*1E-3*air.temp + 0.927 )  
 
-Big_A <- (Q*Pe) + (R*Pe) + S
+Big_A <- (Q*Pe**2.) + (R*Pe) + S
 Big_B <- 1.0 + (1.0-1.46*xv) * ((-8.2*1E-6*air.temp + 4.3*1E-3)*air.press) + (-1.7*1E-4*air.temp + 0.03)
 Big_C <- 1.0 + (1.0-1.*xv)*TkTk  + xv*(Big_B-1.0)
+
+print(paste("BigA:",Big_A,"Big_B:",Big_B,"Big_C",Big_C,sep=""))
 
 mu=1.61
 sigma=(h2o.den/(air.den-h2o.den))
