@@ -41,7 +41,7 @@ print(is.loaded("ecflux"))
 
 #level for IRGASON(EC150+CSAT3) + LI7700 
 wind.rot <- .Fortran("ecflux",
-		     spl = as.integer(length(raw.data$TIMESTAMP[!is.na(raw.data$Uxc)])),
+		     spl = as.integer(length(raw.data$Uxc[!is.na(raw.data$Uxc)])),
 	             u = as.double(raw.data$Uxc[!is.na(raw.data$Uxc)]),
 	             v = as.double(raw.data$Uyc[!is.na(raw.data$Uxc)]),
 	             w = as.double(raw.data$Uzc[!is.na(raw.data$Uxc)]),

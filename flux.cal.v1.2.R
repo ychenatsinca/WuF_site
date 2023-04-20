@@ -16,7 +16,7 @@
 #     Data Processing Tasks: 
 #     1.detrend, 2.despike, 3.lag time fixed, 4.co-spectra check
 #     5.coordinate rotation, 6.turbulent test, 7.stationary test
-#     8.footprint test, 9.wpl correction(fixed, 2023-03-30) 
+#     8.footprint test, 9.wpl correction(added, 2023-03-30) 
 #     10.gradient flux    
 # ------------------------------------------------------------
 
@@ -25,6 +25,7 @@
   spec.table <- data.frame()
 #load source file for the functions used in the program
   source("fun_load_ec150.R")
+  #source("fun_load_test.R")
   #source("fun_load_young.R")
   source("fun_despike.R")
   source("fun_ecflux_for.R")
@@ -33,12 +34,14 @@
   library("signal")
   library("itsmr")
   library("pracma")
+  library("Publish")
 
 #--- set the date for analysis 
   site.name = "WuF"
+ #  site.name = "MPI"
   
-  ini.stamp ="2022-10-26 00:00:00"
-  ndays=30
+  ini.stamp ="2023-04-10 00:00:00"
+  ndays=1
   n30=48*ndays  
 
   date.id   <- format(seq(as.POSIXct(ini.stamp, tz=""), length.out=n30, by='30 min'),'%Y-%m-%d %H:%M:%S')
@@ -99,13 +102,13 @@
 	     print(file.name)
 	     if(file.exists(file.name)==TRUE) {
              raw.data <- fun_load_ec150(
-				dir.name="/lfs/home/ychen/lfs_dir/EC_DATA/", site.name="WuF",
+				dir.name="/lfs/home/ychen/lfs_dir/EC_DATA/", site.name=site.name,
                              	dir.subname=date.yyyy[i],
  				yyyy=date.yyyy[i],mm=date.mm[i],dd=date.dd[i],
                                 hhmm= paste(substr(date.hhmmss[i],start=1,stop=2),substr(date.hhmmss[i],start=4,stop=5),sep=""),
-                             	ld.plot=F,ld.spec=F, ld.na=TRUE, ld.spik=FALSE, dir.plot="./png_plot/")
+                             	ld.plot=F,ld.spec=F, ld.na=T, ld.spik=T, dir.plot="./png_plot/")
 
-	     }else{ print("NO EC-150 file"); next}
+	     }else{ print("NO EC_DATA file was found!"); next}
     
      # remove un gapfilled NA row in the raw.data
      raw.data <- na.omit(raw.data)
@@ -115,28 +118,6 @@
      #raw.data$CH4_mole_fraction <- filtfilt(bf.ch4, as.numeric(raw.data$CH4_mole_fraction)) 
 
  
-     print("Find Lag time ...")
-     # --- using acf to find the maximum corelation of two covariance terms ---
-     # --- the unit conversion was also applied to all gas specis ---
-     # --- H2O ppb(1E-9) to mg/m^3 (1E-6)
-     # --- HNO3 ppb(1E-9) ~ g/m3 (1E-9) to nmol(1/63)
-     # --- HONO ppb(1E-9)  to nmol (1/47)
-     # --- N2O  ppb(1E-9)  to nmol (1/44)
-     # copy tildas data to raw data
-     #w.id1=1
-     #w.id2=100 
-     #var1 <- (as.numeric(raw.data$CH4_mole_fraction[w.id1:w.id2])-mean(as.numeric(raw.data$CH4_mole_fraction[w.id1:w.id2]),na.rm=T)) 
-     #var2 <- raw.data$Uzc
-  
-     # find  lag time
-    # aa <- ccf(x= var1,  y= var2,  lag.max = 100*1.0, plot=FALSE)
-    # lag.id = (aa$lag[which.max((aa$acf))])
-    #  print(paste("CH4 lag time:",lag.id," was found! ",sep=""))
-
-    #adjust the lag time
-    library("binhf")
-    #raw.data$CH4_mole_fraction <- shift(raw.data$CH4_mole_fraction, lag.id, dir="right")
-
 
 
      # --- coordinate rotation and covariance calculation via fortran subroutine --- 
@@ -146,7 +127,6 @@
          #vertical wind after double rotation
      if( exists("obj"))  w_0 <- obj$flux.ec$w
      
-
 
      # --- tubulent, stationary, and footprint  test flux 
   #   flux.test <- fun_turbulent_test(x=raw.data$Uzc, ustar=obj$flux.ec$ustar,uavg=obj$flux.ec$uavg,
@@ -197,7 +177,31 @@
     #
     if (any(names(raw.data) == "CH4_density")) { 
         raw.data$CH4 <- as.numeric(raw.data$CH4_density)
+    }else{
+        raw.data$CH4 <- as.numeric(raw.data$CH4)
+ 
     }
+
+     #adjust the lag time
+    library("binhf") 
+    #print("Find Lag time ...")
+     # --- using acf to find the maximum corelation of two covariance terms ---
+     # --- the unit conversion was also applied to all gas specis ---
+     # --- H2O ppb(1E-9) to mg/m^3 (1E-6)
+     # --- HNO3 ppb(1E-9) ~ g/m3 (1E-9) to nmol(1/63)
+     # --- HONO ppb(1E-9)  to nmol (1/47)
+     # --- N2O  ppb(1E-9)  to nmol (1/44)
+     # copy tildas data to raw data
+     #w.id1=1
+     #w.id2=100 
+     #var1 <- (as.numeric(raw.data$CH4[w.id1:w.id2])-mean(as.numeric(raw.data$CH4[w.id1:w.id2]),na.rm=T)) 
+     #var2 <- w_0 
+  
+     # find  lag time
+     #aa <- ccf(x= var1,  y= var2,  lag.max = 100*1.0, plot=FALSE)
+     #lag.id = (aa$lag[which.max((aa$acf))])
+     #print(paste("CH4 lag time:",lag.id," was found! ",sep=""))
+     #raw.data$CH4 <- shift(raw.data$CH4, lag.id, dir="right")
 
 
     # covariance calculation 
@@ -258,14 +262,18 @@ Big_A <- (Q*Pe**2.) + (R*Pe) + S
 Big_B <- 1.0 + (1.0-1.46*xv) * ((-8.2*1E-6*air.temp + 4.3*1E-3)*air.press) + (-1.7*1E-4*air.temp + 0.03)
 Big_C <- 1.0 + (1.0-1.*xv)*TkTk  + xv*(Big_B-1.0)
 
-print(paste("BigA:",Big_A,"Big_B:",Big_B,"Big_C",Big_C,sep=""))
-
+print(paste("Big_A:",formatC(Big_A,digits=4,width=8,format="f",flag="-"),
+            "Big_B:",formatC(Big_B,digits=4,width=8,format="f",flag="-"),
+            "Big_C:",formatC(Big_C,digits=4,width=8,format="f",flag="-"),sep="  "))
+#
 mu=1.61
 sigma=(h2o.den/(air.den-h2o.den))
 
-co2.flux = w_co2  + mu*(co2.den*1E-3/(air.den-h2o.den))*w_h2o + (1.0 + mu*sigma)*co2.den*w_t/(air.temp+273.15)   
-ch4.flux = Big_A * ( w_ch4 + Big_B *mu*(ch4.den*1E3/(air.den-h2o.den))*w_h2o + (Big_C*(1.0+mu*sigma)*ch4.den*w_t/(air.temp+273.15)   )   )
-
+co2.flux = w_co2  + mu*(co2.den/(air.den-h2o.den))*w_h2o + (1.0 + mu*sigma)*co2.den*w_t/(air.temp+273.15)   
+ch4.flux = Big_A * ( w_ch4 + Big_B *mu*(ch4.den/(air.den-h2o.den))*w_h2o + (Big_C*(1.0+mu*sigma)*ch4.den*w_t/(air.temp+273.15)   )   )
+ch4.flux.0=  w_ch4 
+ch4.flux.1=  Big_B *mu*(ch4.den/(air.den-h2o.den))*w_h2o
+ch4.flux.2=  Big_C*(1.0+mu*sigma)*ch4.den*w_t/(air.temp+273.15)  
 #
 
     new.row <- data.frame(date.time=date.time, 
@@ -274,9 +282,9 @@ ch4.flux = Big_A * ( w_ch4 + Big_B *mu*(ch4.den*1E3/(air.den-h2o.den))*w_h2o + (
 			   u.avg=mean(raw.data$Uxc,na.rm=T),
 			   v.avg=mean(raw.data$Uyc,na.rm=T),
                            w.avg=mean(raw.data$Uzc,na.rm=T),
-                         co2.avg=mean(raw.data$CO2,na.rm=T),
-                         h2o.avg=mean(raw.data$H2O,na.rm=T),
-                         ch4.avg=mean(raw.data$CH4,na.rm=T),
+                         co2.avg=co2.den,
+                         h2o.avg=h2o.den,
+                         ch4.avg=ch4.den,
                          tsc.avg=mean(raw.data$Tsc,na.rm=T),
                          air.press=air.press,
                          air.den=air.den,
@@ -284,8 +292,11 @@ ch4.flux = Big_A * ( w_ch4 + Big_B *mu*(ch4.den*1E3/(air.den-h2o.den))*w_h2o + (
 			 flux.ustr=obj$flux.ec$ustar,
                          flux.sh= (air.den/1E3) * 1005. * w_t ,
                          flux.le= (air.den/1E3) * 2.504 * 1E3 * w_h2o,
-                         flux.co2= co2.flux,  
-                         flux.ch4= ch4.flux )
+                         flux.co2= co2.flux/44.*1E3,  
+                         flux.ch4= ch4.flux/16.*1E3,
+                         flux.ch4.0=ch4.flux.0/16.*1E3,
+                         flux.ch4.1=ch4.flux.1/16.*1E3,
+                         flux.ch4.2=ch4.flux.2/16.*1E3 )
                           
                          #flux.db.sh= 1.24* 1005. * cov(obj$flux.ec$w, as.numeric(raw.data$Tsc)),
                          #flux.db.le= 1.24* 2.504 * 1E3* cov(obj$flux.ec$w, as.numeric(raw.data$H2O)),
@@ -312,7 +323,11 @@ ch4.flux = Big_A * ( w_ch4 + Big_B *mu*(ch4.den*1E3/(air.den-h2o.den))*w_h2o + (
     }#end for 
      #dev.off()
    }#end if
-  
+
+#library("Publish") 
+# add the units information into the flux.table
+flux.table <- Units(flux.table,list(flux.sh="W/m^2", flux.le="W/m^2", flux.co2="umol(CO2)/m^2-s", flux.ch4="umol(CH4)/m^2-s"))
+ 
    write.table(flux.table,file=paste(site.name,"_",ndays,"_flux.table.txt",sep=""), sep=",",row.name=FALSE)
 
   # calculate mean of the co-spectra 

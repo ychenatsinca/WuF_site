@@ -2,22 +2,23 @@
 
 fun_despike <- function(x, nstd=3.5, gap.fill="linear")
 {      
-        
-
-
+      
       #find the index of spikes 
       x <- as.numeric(x)
-      #check file length 
-
+      #check file length
+      #dev.new()
+ 
+      #plot(x,type="l")
       if (length(x) > 0 ) {
         
       n <- length(x)
-      # divided into six sub window 
+      # divided into n*sub window 
+      sub_n=1
 
-      for (isub in 1:6) {
+      for (isub in 1:sub_n) {
       
-      ix1 <- (n/6)*(isub-1) + 1 
-      ix2 <- (n/6)*isub
+      ix1 <- (n/sub_n)*(isub-1) + 1 
+      ix2 <- (n/sub_n)*isub
 
       #print(ix1)
       #print(ix2)
@@ -26,7 +27,7 @@ fun_despike <- function(x, nstd=3.5, gap.fill="linear")
       xx.mean <- mean(xx,na.rm=T)
       xx.std <- sd(xx,na.rm=T) 
 
-      spike.id <- which ( abs(xx- xx.mean) >= xx.std*nstd ) 
+      spike.id <- which ( abs(xx- xx.mean) >= abs(xx.std*nstd) ) 
      
      # print(paste("mean:",xx.mean))
      # print(paste("std:",xx.std))
@@ -48,15 +49,21 @@ fun_despike <- function(x, nstd=3.5, gap.fill="linear")
            {
            #print(paste("id:",i,sep=""))
            #print(paste("spik value: ",xx[i],sep=""))
-              xx[i] <- ( xx[i-1] +  xx.mean) /2.
+           if (i < n) {
+              xx[i] <- ( xx[i-1] +  xx[i+1])/2.
            #print(paste("replace as:",xx[i],sep=""))
+           }else{
+            xx[i] <- xx.mean
+           }
  
       	   }
-      #    print(paste("percentage of spikes:", format(100.0*(length(spike.id)/length(xx)), digits=2,width=5),"%",sep=""))
+          print(paste("percentage of spikes:", format(100.0*(length(spike.id)/length(xx)), digits=2,width=5),"%",sep=""))
       #
           }	  
       #return the vector
+      
       x[ix1:ix2] <- xx
+      #points(x=spike.id,y=x[spike.id],col="red")
 
       }
 
@@ -64,6 +71,7 @@ fun_despike <- function(x, nstd=3.5, gap.fill="linear")
      } else {
        print( "No Data")
      }
+ 
 }
 
 
