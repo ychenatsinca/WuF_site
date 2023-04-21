@@ -4,7 +4,7 @@
 # date: 2023-03-17
 # author: yi-ying chen 
 ##############################################
-        fun_na_fill <- function (xx, plot.ld=TRUE, plot.name="gap.plot" ) {
+        fun_na_fill <- function (xx, plot.ld=FALSE, plot.name="gap.plot" ) {
           
           pp <- plot.ld
        # find NAN index
@@ -31,7 +31,7 @@
              if (pp) {
                 png(file=paste(plot.name,"_na_gf.png",sep=""))
                 try(plot(tmp, type="l",col="gray"))
-                points(x=which(is.na(tmp)), y=xx[which(is.na(tmp))],col="red")
+                try(points(x=which(is.na(tmp)), y=xx[which(is.na(tmp))],col="red"))
                 dev.off()
              }
             print(paste("NaN was gapfilled !"))
@@ -48,4 +48,4 @@
  
       }
 
-  
+

@@ -82,7 +82,7 @@ fun_load_ec150 <- function( dir.name="/lfs/home/ychen/lfs_dir/EC_DATA/", site.na
             load.data$CO2 <- fun_na_fill(load.data$CO2,  plot.ld=F, plot.name=c(plot.name))
             load.data$Tsc <- fun_na_fill(load.data$Tsc,  plot.ld=F, plot.name=c(plot.name))
             load.data$CH4_density <- fun_na_fill(load.data$CH4_density,  plot.ld=F, plot.name=c(plot.name))
-            load.data$CH4_mole_fraction <- fun_na_fill(load.data$CH4_mole_fraction,  plot.ld=TRUE, plot.name=c(plot.name))         
+            load.data$CH4_mole_fraction <- fun_na_fill(load.data$CH4_mole_fraction,  plot.ld=F, plot.name=c(plot.name))         
             }else{
             # No LI-7700 before 2022-10-25  
             load.data$Uzc <- fun_na_fill(load.data$Uzc,  plot.ld=F, plot.name=c(plot.name))

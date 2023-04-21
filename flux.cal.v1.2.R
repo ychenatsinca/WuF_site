@@ -40,8 +40,8 @@
   site.name = "WuF"
  #  site.name = "MPI"
   
-  ini.stamp ="2023-04-10 00:00:00"
-  ndays=1
+  ini.stamp ="2023-03-16 12:00:00"
+  ndays=40
   n30=48*ndays  
 
   date.id   <- format(seq(as.POSIXct(ini.stamp, tz=""), length.out=n30, by='30 min'),'%Y-%m-%d %H:%M:%S')
@@ -128,13 +128,7 @@
      if( exists("obj"))  w_0 <- obj$flux.ec$w
      
 
-     # --- tubulent, stationary, and footprint  test flux 
-  #   flux.test <- fun_turbulent_test(x=raw.data$Uzc, ustar=obj$flux.ec$ustar,uavg=obj$flux.ec$uavg,
-#				     SH=obj$air.den * 1005. * obj$flux.ec$f1, 
-#				     LE=obj$air.den * 2.504 * 1E3 * obj$flux.ec$f2,
-#				     Ta=obj$air.temp,roha=obj$air.den, zm=0.7,
-#				     wd=obj$flux.ec$wd)
-     ld.go <-FALSE
+    ld.go <-FALSE
      if (ld.go) {
      # --- frequency analysis --- 
      cospec<- spectrum(x=c(as.numeric(raw.data$Uzc),
@@ -223,9 +217,9 @@
        }else{
         w_co2 = NA
         }
-    #for w_ch4 
+    #for w_ch4 # unit in [m/s *  mg/m3]
     if ( any(names(raw.data) == "CH4") ) { 
-        w_ch4 = cov(w_0, raw.data$CH4)
+        w_ch4 = cov(w_0, raw.data$CH4*16.)
        }else{
         w_ch4 = NA
         }
@@ -265,7 +259,8 @@ Big_C <- 1.0 + (1.0-1.*xv)*TkTk  + xv*(Big_B-1.0)
 print(paste("Big_A:",formatC(Big_A,digits=4,width=8,format="f",flag="-"),
             "Big_B:",formatC(Big_B,digits=4,width=8,format="f",flag="-"),
             "Big_C:",formatC(Big_C,digits=4,width=8,format="f",flag="-"),sep="  "))
-#
+
+
 mu=1.61
 sigma=(h2o.den/(air.den-h2o.den))
 
@@ -275,6 +270,21 @@ ch4.flux.0=  w_ch4
 ch4.flux.1=  Big_B *mu*(ch4.den/(air.den-h2o.den))*w_h2o
 ch4.flux.2=  Big_C*(1.0+mu*sigma)*ch4.den*w_t/(air.temp+273.15)  
 #
+
+
+# if NAN   
+if ( is.na(Big_A) != TRUE) { 
+#
+   # --- tubulent, stationary, and footprint  test flux 
+   flux.test <- fun_turbulent_test(x=raw.data$Uzc, ustar=obj$flux.ec$ustar,uavg=obj$flux.ec$uavg,
+				     SH=(air.den/1E3) * 1005. * w_t, 
+				     LE=(air.den/1E3) * 2.504 * 1E3 * w_h2o,
+				     Ta=air.temp,roha=air.den, zm=0.7,
+				     wd=obj$flux.ec$wd)
+ }else { 
+   # do notthing  
+}
+
 
     new.row <- data.frame(date.time=date.time, 
                            date.mm=substr(date.time,start=6,stop=7), 
@@ -296,24 +306,11 @@ ch4.flux.2=  Big_C*(1.0+mu*sigma)*ch4.den*w_t/(air.temp+273.15)
                          flux.ch4= ch4.flux/16.*1E3,
                          flux.ch4.0=ch4.flux.0/16.*1E3,
                          flux.ch4.1=ch4.flux.1/16.*1E3,
-                         flux.ch4.2=ch4.flux.2/16.*1E3 )
-                          
-                         #flux.db.sh= 1.24* 1005. * cov(obj$flux.ec$w, as.numeric(raw.data$Tsc)),
-                         #flux.db.le= 1.24* 2.504 * 1E3* cov(obj$flux.ec$w, as.numeric(raw.data$H2O)),
-                         #flux.db.co2= cov(obj$flux.ec$w, as.numeric(raw.data$CO2)) )
-                         #flux.db.ch4= cov(obj$flux.ec$w, as.numeric(raw.data$CH4_mole_fraction))  ) 
-                         #)
- # to mg 
-			#flux.ch4=obj$flux.ec$f4 , # to nmol
- 			# air.wdr=obj$flux.ec$wd,
-                        # air.utr=obj$flux.ec$ustar, 
-                        # air.den=obj$air.den, 
-                        # air.pre=obj$air.press,
-                        # air.tmp=obj$air.temp,
-                        # flag.xmx=flux.test$xmax,
-                        # flag.sta=flux.test$flag.stat,
-			# flag.itc=flux.test$flag.itc,
-			# flag.fpt=flux.test$flag.fpt )
+                         flux.ch4.2=ch4.flux.2/16.*1E3,
+                         flag.xmx=flux.test$xmax,
+                         flag.sta=flux.test$flag.stat,
+			 flag.itc=flux.test$flag.itc,
+			 flag.fpt=flux.test$flag.fpt )
      # show the result
      print(new.row)
 
@@ -324,11 +321,12 @@ ch4.flux.2=  Big_C*(1.0+mu*sigma)*ch4.den*w_t/(air.temp+273.15)
      #dev.off()
    }#end if
 
-#library("Publish") 
-# add the units information into the flux.table
-flux.table <- Units(flux.table,list(flux.sh="W/m^2", flux.le="W/m^2", flux.co2="umol(CO2)/m^2-s", flux.ch4="umol(CH4)/m^2-s"))
+  #library("Publish") 
+  # add the units information into the flux.table
+  flux.table <- Units(flux.table,list(flux.sh="W/m^2", flux.le="W/m^2", flux.co2="umol(CO2)/m^2-s", flux.ch4="umol(CH4)/m^2-s"))
  
-   write.table(flux.table,file=paste(site.name,"_",ndays,"_flux.table.txt",sep=""), sep=",",row.name=FALSE)
+  #write out the flux.table
+  write.table(flux.table,file=paste(site.name,"_",ndays,"_flux.table.txt",sep=""), sep=",",row.name=FALSE)
 
   # calculate mean of the co-spectra 
   #spec.mean <- aggregate( spec.table[,2:5], by=list(spec.table$freq), FUN=mean, na.action = na.omit) 
@@ -341,51 +339,47 @@ flux.table <- Units(flux.table,list(flux.sh="W/m^2", flux.le="W/m^2", flux.co2="
   #plot(x=as.numeric(spec.mean$Group.1)*10,y=spec.mean$hno3/max(spec.mean$hno3), log="xy",ylim=c(1e-4,1e0),
   #     main="w'HNO3' co-spectra",cex=0.5,ylab="normailzed co-spectra",xlab="frequency",col="red")
 
-#write out the flux.table
-
 #
-#
+# 
+#flux.table$flux.ch4  
+flux.table$flux.ch4[abs(flux.table$flux.ch4)>=0.2  ] <-  NA
 
-plot.ld <- FALSE
+
+plot.ld <- TRUE
 if(plot.ld)
 {
 # pdf(file=paste("./plot_pdf/flux.table.timeseries.pdf",sep=""))
  par(mfrow=c(4,2),mai=c(0.75,0.75,0.2,0.2) )
- plot(x=flux.table$date.time, y=flux.table$lev1.hno3,type="p",xlab="HNO3 flux (nmol m-2s-1)",
-      col=ifelse(flux.table$flag.n1n2=="N1","gray","black"),
-      pch=ifelse( (flux.table$flag.itc==TRUE)&(flux.table$flag.stat==TRUE),19,1) , ylim=c(-1E-3,0.01))
 
- plot(x=flux.table$date.time, y=flux.table$lev1.hono,type="p",xlab="HONO flux (nmol m-2s-1)",
-      col=ifelse(flux.table$flag.n1n2=="N1","gray","black"),
-      pch=ifelse( (flux.table$flag.itc==TRUE)&(flux.table$flag.stat==TRUE),19,1), ylim=c(-1E-3,0.05))
- 
- plot(x=flux.table$date.time, y=flux.table$lev1.n2o,type="p",xlab="N2O flux (nmol m-2s-1)", 
-      col=ifelse(flux.table$flag.n1n2=="N1","gray","black"),
-      pch=ifelse( (flux.table$flag.itc==TRUE)&(flux.table$flag.stat==TRUE),19,1), ylim=c(-5E0,40) )
- 
- plot(x=flux.table$date.time, y=flux.table$lev1.le.2,type="p",xlab="Latent heat flux (W m-2; J m-2 s-1)",
-      col=ifelse(flux.table$flag.n1n2=="N1","gray","black"),
-      pch=ifelse( (flux.table$flag.itc==TRUE)&(flux.table$flag.stat==TRUE),19,1),ylim=c(-5E1,600))
+ #CO2 flux
+ ylab.txt <- expression(paste("CO2 flux, (", mu, "mol/", m^2, s,")"))
+ plot(x=flux.table$date.time, y=flux.table$flux.co2, type="p",ylab=ylab.txt, xlab="Observation Period [Month date]", 
+      col="gray",cex=0.8, pch=ifelse( (flux.table$flag.itc==TRUE)&(flux.table$flag.stat==TRUE),19,1) , ylim=c(-3E1,2E1));grid()
+ boxplot(flux.table$flux.co2~flux.table$date.hh, ylab=ylab.txt, xlab="Local hour [00:00 to 24:00]", col="gray", ylim=c(-3E1,2E1));grid()
 
- plot(x=flux.table$date.time, y=flux.table$lev1.no.gd,type="p",xlab="NO flux (nmol m-2s-1)", 
-      col=ifelse(flux.table$flag.n1n2=="N1","gray","black"),
-      pch=ifelse( (flux.table$flag.itc==TRUE)&(flux.table$flag.stat==TRUE),19,1),ylim=c(-1E-3,0.1))
- 
- plot(x=flux.table$date.time, y=flux.table$lev1.nox.gd,type="p",xlab="(NOx flux (nmolm-2s-1)",
-      col=ifelse(flux.table$flag.n1n2=="N1","gray","black"),
-      pch=ifelse( (flux.table$flag.itc==TRUE)&(flux.table$flag.stat==TRUE),19,1),ylim=c(-1E-3,0.3))
- 
- plot(x=flux.table$date.time, y=flux.table$lev1.ustar,type="p",
-      col="forestgreen",xlab="Friction velocity (m s-1)",
-      pch=ifelse( (flux.table$flag.itc==TRUE)&(flux.table$flag.stat==TRUE),19,1),ylim=c(-1E-3,0.4))
- 
- plot(x=flux.table$date.time, y=flux.table$lev1.le.1,type="p",xlab="Latent/Sensible heat flux (W m-2)",
-      pch=ifelse( (flux.table$flag.itc==TRUE)&(flux.table$flag.stat==TRUE),19,1), ylim=c(-5E1,600))
- 
- lines(x=flux.table$date.time, y=flux.table$lev1.sh,col="red", 
-	pch=ifelse( (flux.table$flag.itc==TRUE)&(flux.table$flag.stat==TRUE),19,1) )
+ #CH4 Flux
+ ylab.txt <- expression(paste("CH4 flux, (", mu, "mol/", m^2, s,")")) 
+ plot(x=flux.table$date.time, y=flux.table$flux.ch4, type="p",ylab=ylab.txt, xlab="Observation Period [Month date]", 
+      col="orange",cex=0.8, pch=ifelse( (flux.table$flag.itc==TRUE)&(flux.table$flag.stat==TRUE),19,1) , ylim=c(-1E-1,2E-1));grid()
+ boxplot(flux.table$flux.ch4~flux.table$date.hh, ylab=ylab.txt, xlab="Local hour [00:00 to 24:00]", col="orange", ylim=c(-1E-1,2E-1));grid()
 
-#dev.off()
+ #Latent heat flux
+ ylab.txt <- expression(paste("Latent heat flux, (", "W/", m^2,")"))
+ plot(x=flux.table$date.time, y=flux.table$flux.le, type="p",ylab=ylab.txt, xlab="Observation Period [Month date]", 
+      col="blue",cex=0.8, pch=ifelse( (flux.table$flag.itc==TRUE)&(flux.table$flag.stat==TRUE),19,1) , ylim=c(-5E1,5E2));grid()
+ boxplot(flux.table$flux.le~flux.table$date.hh, ylab=ylab.txt, xlab="Local hour [00:00 to 24:00]", col="blue", ylim=c(-5E1,5E2));grid()
+ 
+ #Sensible heat flux
+ ylab.txt <- expression(paste("Sensible heat flux, (", "W/", m^2,")")) 
+ plot(x=flux.table$date.time, y=flux.table$flux.sh, type="p",ylab=ylab.txt,xlab="Observation Period [Month date]", 
+      col="red",cex=0.8, pch=ifelse( (flux.table$flag.itc==TRUE)&(flux.table$flag.stat==TRUE),19,1) , ylim=c(-5E1,5E2));grid()
+ boxplot(flux.table$flux.sh~flux.table$date.hh, ylab=ylab.txt, xlab="Local hour [00:00 to 24:00]", col="red", ylim=c(-5E1,5E2));grid()
+ 
+
+# dev.off()
+
+
+
 } 
 
 
