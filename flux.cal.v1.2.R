@@ -35,14 +35,14 @@
   library("itsmr")
   library("pracma")
   library("Publish")
-
+  library("lubridate")
 #--- set the date for analysis 
   site.name = "WuF"
  #  site.name = "MPI"
   
-  ini.stamp ="2023-03-16 12:00:00"
-  ndays=40
-  n30=48*ndays  
+  ini.stamp ="2023-03-15 00:00:00"
+  ndays=1
+  n30=1*ndays  
 
   date.id   <- format(seq(as.POSIXct(ini.stamp, tz=""), length.out=n30, by='30 min'),'%Y-%m-%d %H:%M:%S')
 # date.id <- format(seq(as.POSIXct("2019-03-14 12:00:00", tz=""), length.out=10, by='15 min'),'%Y_%j %H:%M')
@@ -157,8 +157,11 @@
 
 
     #add date.time stamp 
-    date.time <- as.POSIXct(date.id[i],format='%Y-%m-%d %H:%M:%S') 
+    work.date <- as.POSIXct(date.id[i],format='%Y-%m-%d %H:%M:%S') 
+    work.mm <- formatC(date.mm[i], width=2, flag="0")
+    work.hh <- formatC(hour(work.date), width=2, flag="0") 
 
+    
     
     #convert charaters to numeric 
     raw.data$Uxc <- as.numeric(raw.data$Uxc)
@@ -172,7 +175,7 @@
     if (any(names(raw.data) == "CH4_density")) { 
         raw.data$CH4 <- as.numeric(raw.data$CH4_density)
     }else{
-        raw.data$CH4 <- as.numeric(raw.data$CH4)
+  #      raw.data$CH4 <- as.numeric(raw.data$CH4)
  
     }
 
@@ -282,13 +285,14 @@ if ( is.na(Big_A) != TRUE) {
 				     Ta=air.temp,roha=air.den, zm=0.7,
 				     wd=obj$flux.ec$wd)
  }else { 
-   # do notthing  
+   # do nothing but have a NA information
+   flux.test <- data.frame( xmax=NA, flag.stat=NA, flag.itc=NA, flag.fpt=NA) 
 }
 
 
-    new.row <- data.frame(date.time=date.time, 
-                           date.mm=substr(date.time,start=6,stop=7), 
-			   date.hh=substr(date.time,start=12,stop=13),
+    new.row <- data.frame(date.time=work.date, 
+                           date.mm=work.mm, 
+			   date.hh=work.hh,
 			   u.avg=mean(raw.data$Uxc,na.rm=T),
 			   v.avg=mean(raw.data$Uyc,na.rm=T),
                            w.avg=mean(raw.data$Uzc,na.rm=T),
@@ -326,7 +330,7 @@ if ( is.na(Big_A) != TRUE) {
   flux.table <- Units(flux.table,list(flux.sh="W/m^2", flux.le="W/m^2", flux.co2="umol(CO2)/m^2-s", flux.ch4="umol(CH4)/m^2-s"))
  
   #write out the flux.table
-  write.table(flux.table,file=paste(site.name,"_",ndays,"_flux.table.txt",sep=""), sep=",",row.name=FALSE)
+  write.table(flux.table,file=paste(site.name,"_",ini.stamp,"_",ndays,"_flux.table.txt",sep=""), sep=",",row.name=FALSE)
 
   # calculate mean of the co-spectra 
   #spec.mean <- aggregate( spec.table[,2:5], by=list(spec.table$freq), FUN=mean, na.action = na.omit) 
@@ -342,14 +346,14 @@ if ( is.na(Big_A) != TRUE) {
 #
 # 
 #flux.table$flux.ch4  
-flux.table$flux.ch4[abs(flux.table$flux.ch4)>=0.2  ] <-  NA
+#flux.table$flux.ch4[abs(flux.table$flux.ch4)>=0.15  & as.numeric(flux.table$date.hh) == 4.0  ] <-  NA
+#flux.table$date.hh <- as.character(flux.table$date.hh)
 
-
-plot.ld <- TRUE
+plot.ld <- FALSE
 if(plot.ld)
 {
-# pdf(file=paste("./plot_pdf/flux.table.timeseries.pdf",sep=""))
- par(mfrow=c(4,2),mai=c(0.75,0.75,0.2,0.2) )
+# pdf(file=paste(site.name,"_",ini.stamp,"_",ndays,"_flux.plot.pdf",sep=""))
+ par(mfrow=c(4,2),mai=c(0.75,0.75,0.2,0.2), mar=c(2,4.5,1,1) )
 
  #CO2 flux
  ylab.txt <- expression(paste("CO2 flux, (", mu, "mol/", m^2, s,")"))
@@ -359,9 +363,9 @@ if(plot.ld)
 
  #CH4 Flux
  ylab.txt <- expression(paste("CH4 flux, (", mu, "mol/", m^2, s,")")) 
- plot(x=flux.table$date.time, y=flux.table$flux.ch4, type="p",ylab=ylab.txt, xlab="Observation Period [Month date]", 
-      col="orange",cex=0.8, pch=ifelse( (flux.table$flag.itc==TRUE)&(flux.table$flag.stat==TRUE),19,1) , ylim=c(-1E-1,2E-1));grid()
- boxplot(flux.table$flux.ch4~flux.table$date.hh, ylab=ylab.txt, xlab="Local hour [00:00 to 24:00]", col="orange", ylim=c(-1E-1,2E-1));grid()
+try( plot(x=flux.table$date.time, y=flux.table$flux.ch4, type="p",ylab=ylab.txt, xlab="Observation Period [Month date]", 
+      col="orange",cex=0.8, pch=ifelse( (flux.table$flag.itc==TRUE)&(flux.table$flag.stat==TRUE),19,1) , ylim=c(-1E-1,2E-1)));grid()
+try( boxplot(flux.table$flux.ch4~flux.table$date.hh, ylab=ylab.txt, xlab="Local hour [00:00 to 24:00]", col="orange", ylim=c(-1E-1,2E-1)));grid()
 
  #Latent heat flux
  ylab.txt <- expression(paste("Latent heat flux, (", "W/", m^2,")"))
