@@ -7,9 +7,9 @@ fun_load_ec150 <- function( dir.name="/lfs/home/ychen/lfs_dir/EC_DATA/", site.na
 			     dir.subname="2023",yyyy="2023",mm="03",dd="16",hhmm="1300",
 		             ld.plot=F,ld.spec=F, dir.plot="./png_plot/", ld.na=TRUE, ld.spik=TRUE){
          
-       #  site.name="WuF"; dir.plot="./png_plot/"
-#	 dir.name="/lfs/home/ychen/lfs_dir/EC_DATA/"
-#         dir.subname="2023"; yyyy="2023";mm="03";dd="16";hhmm="1500";ld.plot="TRUE";ld.spec="TRUE";ld.na=TRUE;ld.spik=TRUE
+         #site.name="WuF"; dir.plot="./png_plot/"
+	 #dir.name="/lfs/home/ychen/lfs_dir/EC_DATA/"
+         #dir.subname="2023"; yyyy="2023";mm="03";dd="01";hhmm="0000";ld.plot="F";ld.spec="F";ld.na=TRUE;ld.spik=TRUE
         
         yyyy <- formatC(yyyy, width=4, flag="0")
         mm <- formatC(mm, width=2, flag="0")

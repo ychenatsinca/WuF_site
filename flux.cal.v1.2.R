@@ -40,9 +40,9 @@
   site.name = "WuF"
  #  site.name = "MPI"
   
-  ini.stamp ="2023-03-15 00:00:00"
-  ndays=1
-  n30=1*ndays  
+  ini.stamp ="2022-10-25 00:00:00"
+  ndays=60
+  n30=48*ndays  
 
   date.id   <- format(seq(as.POSIXct(ini.stamp, tz=""), length.out=n30, by='30 min'),'%Y-%m-%d %H:%M:%S')
 # date.id <- format(seq(as.POSIXct("2019-03-14 12:00:00", tz=""), length.out=10, by='15 min'),'%Y_%j %H:%M')
@@ -110,8 +110,14 @@
 
 	     }else{ print("NO EC_DATA file was found!"); next}
     
-     # remove un gapfilled NA row in the raw.data
-     raw.data <- na.omit(raw.data)
+     # remove NA row refer to the sonica wind speed measurnment in the raw.data
+     raw.data <- raw.data[!(is.nan(raw.data$Uxc)), ]     
+     raw.data <- raw.data[!(is.nan(raw.data$Uyc)), ]     
+     raw.data <- raw.data[!(is.nan(raw.data$Uzc)), ]     
+     raw.data <- raw.data[!(is.nan(raw.data$Tsc)), ]      
+     raw.data <- raw.data[!(is.nan(raw.data$CO2)), ]     
+     raw.data <- raw.data[!(is.nan(raw.data$H2O)), ]     
+     #raw.data <- na.omit(raw.data)
      #create the band-pass filter
      #bf.ch4 <- butter(1, c(0.0,0.025), type="pass")
      #apply the filter to the ch4 noisy signal 
@@ -126,7 +132,8 @@
        )
          #vertical wind after double rotation
      if( exists("obj"))  w_0 <- obj$flux.ec$w
-     
+    
+ 
 
     ld.go <-FALSE
      if (ld.go) {
