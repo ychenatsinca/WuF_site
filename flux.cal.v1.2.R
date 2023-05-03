@@ -36,15 +36,19 @@
   library("pracma")
   library("Publish")
   library("lubridate")
+  library("tidyverse")  
 #--- set the date for analysis 
   site.name = "WuF"
  #  site.name = "MPI"
   
-  ini.stamp ="2022-10-25 00:00:00"
-  ndays=60
-  n30=48*ndays  
-
-  date.id   <- format(seq(as.POSIXct(ini.stamp, tz=""), length.out=n30, by='30 min'),'%Y-%m-%d %H:%M:%S')
+  ini.stamp ="2019-07-01 00:00:00"
+  end.stamp ="2022-12-31 00:00:00"
+  crop_id= "S1-S9"
+#  ndays=60
+#  n30=48*ndays  
+#  date.id   <- format(seq(as.POSIXct(ini.stamp, tz=""), length.out=n30, by='30 min'),'%Y-%m-%d %H:%M:%S')
+  date.id   <- format(seq(as.POSIXct(ini.stamp, tz=""),as.POSIXct(end.stamp, tz="") , by='30 min'),'%Y-%m-%d %H:%M:%S')
+#
 # date.id <- format(seq(as.POSIXct("2019-03-14 12:00:00", tz=""), length.out=10, by='15 min'),'%Y_%j %H:%M')
   date.yyyy <- substr(date.id,start=1,stop=4)
   date.mm   <- substr(date.id,start=6,stop=7)
@@ -337,7 +341,60 @@ if ( is.na(Big_A) != TRUE) {
   flux.table <- Units(flux.table,list(flux.sh="W/m^2", flux.le="W/m^2", flux.co2="umol(CO2)/m^2-s", flux.ch4="umol(CH4)/m^2-s"))
  
   #write out the flux.table
-  write.table(flux.table,file=paste(site.name,"_",ini.stamp,"_",ndays,"_flux.table.txt",sep=""), sep=",",row.name=FALSE)
+  write.table(flux.table,file=paste(site.name,"_",crop_id,"_",
+              as.Date(ini.stamp,format="%Y-%m-%d"),"_",
+              as.Date(end.stamp,format="%Y-%m-%d"),"_flux.table.txt",sep=""), sep=",",row.name=FALSE)
+
+
+ 
+  # merge flux table with meteorological data table
+  ld_go <- TRUE
+
+  if (ld_go) {
+  # allocate empty table 
+  met.table.all <- data.frame()
+
+  for (iyear in 2019:2022) {
+  # load the meteorological file
+  print(paste("Working on reading the meteorological file for year:", iyear, sep="")) 
+  #met.yr <- substr(ini.stamp, start=1, stop=4)
+  met.yr <- as.character(iyear)
+  met.fname <- paste(met.yr,"_mete.csv",sep="")
+  met.fpath <- paste("/lfs/home/ychen/lfs_dir/EC_DATA/",site.name,"/met/",sep="")
+  met.table <- read.csv(file=paste(met.fpath,met.fname,sep=""), sep="," )
+  #rename the first column as date.time
+  colnames(met.table)[1] <- "date.time"
+  #set date 
+  met.table$date.time <-  as.POSIXct(met.table$date.time, format='%Y/%m/%d %H:%M')  
+  met.table.all <- rbind(met.table, met.table.all)
+
+  } # end for 
+ 
+  print("finished reading the meteorological observation and trying to merge two tables!")  
+  
+  # merge met.table and flux.table with all observation 
+  all.table <- left_join(flux.table, met.table.all, by=c("date.time"))
+  
+  #write out the all.table
+  write.table(all.table,file=paste(site.name,"_",crop_id,"_",
+              as.Date(ini.stamp,format="%Y-%m-%d"),"_",
+              as.Date(end.stamp,format="%Y-%m-%d"),"_all.table.txt",sep=""), sep=",",row.name=FALSE)
+
+  print(paste("Write out the table:", paste(site.name,"_",crop_id,"_",
+              as.Date(ini.stamp,format="%Y-%m-%d"),"_",
+              as.Date(end.stamp,format="%Y-%m-%d"),"_all.table.txt",sep=""),se=""))
+
+  
+  } # end ld_go
+
+
+
+
+
+
+
+
+
 
   # calculate mean of the co-spectra 
   #spec.mean <- aggregate( spec.table[,2:5], by=list(spec.table$freq), FUN=mean, na.action = na.omit) 
