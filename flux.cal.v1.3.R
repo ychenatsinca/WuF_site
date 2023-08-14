@@ -14,11 +14,12 @@
 #     Version: 1.2 (CO2, H20, CH4, Ta only) without N2O/Tildas 
 #     Revised: 2023-05-05
 #     Version: 1.3 (CO2, H2O, CH4, Ta, Mete) without N2O/TILDAS
+#     Version: 1.4 add uncertainty analysis
 #     Data Processing Tasks: 
 #     1.detrend, 2.despike, 3.lag time fixed, 4.co-spectra check
 #     5.coordinate rotation, 6.turbulent test, 7.stationary test
 #     8.footprint test, 9.wpl correction(added, 2023-03-30) 
-#     10.gradient flux (not yet)    
+#     10.gradient flux (not yet) 11. uncertainty analysis (pending)   
 # ------------------------------------------------------------
 
 # initial  tables
@@ -44,8 +45,8 @@
   ec.dir = "/lfs/home/ychen/lfs_dir/EC_DATA/" 
   ec150.dir = paste(ec.dir,site.name,"/30min",sep="")
 
-  ini.stamp = "2023-05-01 00:00:00"
-  end.stamp = "2023-05-05 00:00:00"
+  ini.stamp = "2023-07-15 00:00:00"
+  end.stamp = "2023-08-13 24:00:00"
   crop_id = "SXX"
 #  ndays=60
 #  n30=48*ndays  

@@ -8,7 +8,7 @@ library("lubridate")
 # set flux table name
 #table.name= c("WuF_2023-03-01 00:00:00_60_flux.table.txt")
 #table.name= c("WuF_S1-S9_2019-07-01_2022-12-31_flux.table.txt")
-table.name=c("WuF_S10_2023-03-01_2023-05-31_flux.table.txt")
+table.name=c("WuF_S10_2023-02-15_2023-05-14_all.table.txt")
 
 # read in the flux.table
 flux.table <-  read.csv(table.name) 
@@ -109,7 +109,7 @@ ld_go <- TRUE
 
 if (ld_go) {
   #CO2 flux 
-#  png(file=paste(substr(table.name,start=5,stop=14),"_CO2_flux.plot.png",sep=""), width=1200, height=850, res=128)
+  png(file=paste(substr(table.name,start=5,stop=14),"_CO2_flux.plot.png",sep=""), width=1200, height=850, res=128)
   par(mfrow=c(2,1),mai=c(0.75,0.75,0.2,0.2), mar=c(2.,5.,2.0,1) )
   ylab.txt <- expression(paste("CO")[2]*paste(" flux, (", mu, "mol/", m^2, s,")"))
 
@@ -123,7 +123,7 @@ if (ld_go) {
 
   par(cex.axis=1.5); par(cex.lab=1.5) # is for y-axis
 
-  boxplot(main=paste(crop_season,"_cropping season",sep=""), flux.table$flux.co2 ~ flux.table$date.dd, ylab=ylab.txt, ylim=c(-2E1,2E1),col="gray", outline=FALSE)
+  boxplot(main=paste(crop_season,"_cropping season",sep=""), flux.table$flux.co2 ~ flux.table$date.dd, ylab=ylab.txt, ylim=c(-2.5E1,2E1),col="gray", outline=FALSE)
   #x<- flux.table$date.dd ;  at <- seq(min(x), max(x), 7)
   #axis(side=1, at=at, labels=format(at, "%b-%d"), cex.axis=1.2) 
   abline(a=NULL, b=NULL, h=0, v=NULL, col="black")
@@ -131,11 +131,10 @@ if (ld_go) {
   means <- tapply(flux.table$flux.co2, flux.table$date.dd, mean)
   
   dd_table <- data.frame(mean=means, cumsum=cumsum(means) )
-
-  points(means, pch=20, cex=0.5)
+  points(means, pch=21, cex=0.5, bg="gray")
   #mtext(side=1, "Julian day", line=2.0, cex=1.2) 
  
-  boxplot(flux.table$flux.co2 ~ flux.table$date.week.hh, ylab=ylab.txt, ylim=c(-2E1,2E1),col="gray",xaxt="n", outline=FALSE)
+  boxplot(flux.table$flux.co2 ~ flux.table$date.week.hh, ylab=ylab.txt, ylim=c(-2.5E1,2E1),col="gray",xaxt="n", outline=FALSE)
   abline(a=NULL, b=NULL, h=0, v=NULL, col="black")
  
   x<- flux.table$date.week.hh ; 
@@ -145,7 +144,7 @@ if (ld_go) {
   text(x=at-min(x)+12 , y=rep(24,length(at)), paste("[",xlab,")") , cex=1)  
   par(xpd=F)  
   mtext(side=1, "Diurnal-pattern, [weekly average]", line=0.6, cex=1.2) 
-#  dev.off()
+  dev.off()
 
   #CH4 flux
   png(file=paste(substr(table.name,start=5,stop=14),"_CH4_flux.plot.png",sep=""), width=1200, height=850, res=128)
@@ -155,7 +154,7 @@ if (ld_go) {
   ylab.txt <- expression(paste("CH")[4]*paste(" flux, (", mu, "mol/", m^2, s,")"))
   boxplot(flux.table$flux.ch4 ~ flux.table$date.dd, ylab=ylab.txt, ylim=c(-.5E-1,1.E-1),col="orange", outline=FALSE)
   means <- tapply(flux.table$flux.ch4, flux.table$date.dd, mean)
-  points(means, pch=20, cex=0.5)
+  points(means, pch=21, cex=0.5,bg="gray")
   #mtext(side=1, "Julian day", line=2.0, cex=1.2) 
   abline(a=NULL, b=NULL, h=0, v=NULL, col="black")
   grid()
@@ -172,20 +171,25 @@ if (ld_go) {
   dev.off()
 
 
-  ld_go <- FALSE
+  ld_go <- TRUE
   if (ld_go) {
   #Latent heat 
   png(file=paste(substr(table.name,start=5,stop=14),"_Latent_heat_flux.plot.png",sep=""), width=1024, height=768, res=128)
   par(mfrow=c(2,1),mai=c(0.75,0.75,0.2,0.2), mar=c(2,4.5,1.5,1) )
 
-  ylab.txt <- expression(paste("Latent heat, (", "W/", m^2,")"))
-  plot(x=flux.table$date.time, y=flux.table$flux.le, type="p",ylab=ylab.txt, xlab="Observation Period [Month date]",xaxt="n", 
-      col="blue",cex=1.0, ylim=c(-5E1,5E2))
+  ylab.txt <- expression(paste("LE")*paste(" flux, (", "W/", m^2,")"))
+  boxplot(flux.table$flux.le ~ flux.table$date.dd, ylab=ylab.txt, ylim=c(-5E1,5E2),col="blue", outline=FALSE)
+  means <- tapply(flux.table$flux.le, flux.table$date.dd, mean)
+  points(means, pch=21, cex=0.5,bg="gray")
+  #mtext(side=1, "Julian day", line=2.0, cex=1.2) 
+  abline(a=NULL, b=NULL, h=0, v=NULL, col="black")
+  grid()
+ 
   #set x-axis label
   x<- flux.table$date.time ;  at <- seq(min(x), max(x), "week")
   axis(side=1, at=at, labels=format(at, "%b-%d"), cex.axis=1.2) 
 
-  boxplot(flux.table$flux.le ~ flux.table$date.week.hh, ylab=ylab.txt,  ylim=c(-5E1,5E2), col="blue",xaxt="n")
+  boxplot(flux.table$flux.le ~ flux.table$date.week.hh, ylab=ylab.txt,  ylim=c(-5E1,5E2), col="blue",xaxt="n",outline=FALSE)
   grid()
   mtext(side=1, "Diurnal-pattern, [weekly]", line=0.6, cex=1.2) 
   dev.off()
@@ -193,11 +197,15 @@ if (ld_go) {
   #Sensible heat
   png(file=paste(substr(table.name,start=5,stop=14),"_Sensible_heat_flux.plot.png",sep=""), width=1024, height=768, res=128)
   par(mfrow=c(2,1),mai=c(0.75,0.75,0.2,0.2), mar=c(2,4.5,1.5,1) )
-  plot(x=flux.table$date.time, y=flux.table$flux.sh, type="p",ylab=ylab.txt, xlab="Observation Period [Month date]",xaxt="n", 
-      col="red",cex=1.0, ylim=c(-5E1,5E2))
-  
-  ylab.txt <- expression(paste("Sensible heat, (", "W/", m^2,")"))
-  boxplot(flux.table$flux.sh ~ flux.table$date.week.hh, ylab=ylab.txt, ylim=c(-5E1,5E2), col="red",xaxt="n")
+ 
+  ylab.txt <- expression(paste("SH")*paste(" flux, (", "W/", m^2,")"))
+  boxplot(flux.table$flux.sh ~ flux.table$date.dd, ylab=ylab.txt, ylim=c(-5E1,5E2),col="red", outline=FALSE)
+  means <- tapply(flux.table$flux.sh, flux.table$date.dd, mean)
+  points(means, pch=21, cex=0.5,bg="gray")
+  #mtext(side=1, "Julian day", line=2.0, cex=1.2) 
+  abline(a=NULL, b=NULL, h=0, v=NULL, col="black")
+  grid()
+  boxplot(flux.table$flux.sh ~ flux.table$date.week.hh, ylab=ylab.txt, ylim=c(-5E1,5E2), col="red",xaxt="n",outline=FALSE)
   grid()
   mtext(side=1, "Diurnal-pattern, [weekly]", line=0.6, cex=1.2) 
   dev.off()
